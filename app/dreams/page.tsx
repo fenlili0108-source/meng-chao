@@ -168,7 +168,7 @@ export default function DreamsPage() {
         className="mx-auto flex max-w-5xl items-center justify-between border-t px-6 py-8 text-[12px] text-text-tertiary md:px-10"
         style={{ borderColor: "var(--border-subtle)" }}
       >
-        <span>解梦 · 台阶一(本地版)</span>
+        <span>梦巢 · 台阶一(本地版)</span>
         <Link href="/" className="hover:text-text-secondary">
           ← 回到记录
         </Link>
