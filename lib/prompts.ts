@@ -201,7 +201,7 @@ export const PROFILE_SYSTEM_PROMPT = `你是一个解梦产品的「用户画像
 {
   "understanding": "一到三句话,对用户内心核心议题的整体判断。扎根于具体的梦,不要空泛。",
   "motifs": [
-    {"name": "母题名(简短)", "desc": "一句话说明", "dreams": "它出现在哪几个梦里的简短指代"},
+    {"name": "母题名(简短)", "desc": "一句话说明", "dreams": "它出现在哪几个梦里的简短指代", "icon": "从下方图标清单里挑一个最贴合这个母题含义的图标名"},
     ... (2 到 4 个)
   ],
   "emotion_distribution": [
@@ -217,7 +217,14 @@ export const PROFILE_SYSTEM_PROMPT = `你是一个解梦产品的「用户画像
 注意:
 - understanding 是最重要的,要让用户读了觉得"这确实是在说我",而不是说谁都行。
 - 如果某个梦的情绪用户没标记,你根据梦的内容合理归类,但不要过度演绎。
-- 数字要基于真实的梦,不要编造不存在的意象或夸大次数。`;
+- 数字要基于真实的梦,不要编造不存在的意象或夸大次数。
+- 关于母题的 icon 字段:只能从下面这份 lucide-react 图标清单里挑一个最贴合该母题含义的(填图标名,如 "compass"),不要自己编图标名:
+  compass(探索/方向)、mountain(高处/攀登)、move-down(坠落/下降)、waves(水/情绪流动)、
+  flame(冲突/强烈情绪)、moon(夜晚/平静/睡眠)、coffee(日常/放松)、leaf(自然/松弛)、
+  orbit(宇宙/抽象/宏大)、sparkles(神秘/奇异)、users(人际/关系)、user(自我)、
+  home(家/归属)、door-open(出入口/转变)、eye(观察/被注视)、shield(防御/警惕)、
+  zap(突发/紧张)、heart(情感/亲密)、clock(时间/重复)、map(旅程/迷失)。
+  如果以上都不够贴切,用 sparkles 兜底。`;
 
 export interface DreamForProfile {
   createdAt: string;
@@ -262,6 +269,9 @@ export interface ProfileMotif {
   name: string;
   desc: string;
   dreams?: string;
+  // lucide-react 图标名(kebab-case),从 prompt 给的清单里来;
+  // 前端渲染时找不到会回退到 sparkles
+  icon?: string;
 }
 export interface ProfileEmotionItem {
   label: string;
@@ -348,7 +358,8 @@ export function parseProfileJson(raw: string): ProfileJson {
           const desc = typeof r.desc === "string" ? r.desc.trim() : "";
           if (!name) return null;
           const dreams = typeof r.dreams === "string" ? r.dreams.trim() : undefined;
-          return { name, desc, dreams: dreams || undefined };
+          const icon = typeof r.icon === "string" ? r.icon.trim().toLowerCase() : undefined;
+          return { name, desc, dreams: dreams || undefined, icon: icon || undefined };
         })
         .filter((x): x is ProfileMotif => x !== null)
     : [];

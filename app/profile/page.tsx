@@ -16,10 +16,65 @@ import {
 import type {
   ProfileJson,
   ProfileEmotionItem,
+  ProfileMotif,
   ProfileMotifFreq,
 } from "@/lib/prompts";
 import type { ProfileOverride } from "@/lib/profileOverride";
 import Logo from "@/components/Logo";
+import {
+  Compass,
+  Mountain,
+  MoveDown,
+  Waves,
+  Flame,
+  Moon,
+  Coffee,
+  Leaf,
+  Orbit,
+  Sparkles,
+  Users,
+  User,
+  Home,
+  DoorOpen,
+  Eye,
+  Shield,
+  Zap,
+  Heart,
+  Clock,
+  Map as MapIcon,
+  type LucideIcon,
+} from "lucide-react";
+
+// PROFILE_PAGE.md §四 限定的图标清单。AI 只能从这里挑;找不到一律回退到 Sparkles。
+const MOTIF_ICONS: Record<string, LucideIcon> = {
+  compass: Compass,
+  mountain: Mountain,
+  "move-down": MoveDown,
+  waves: Waves,
+  flame: Flame,
+  moon: Moon,
+  coffee: Coffee,
+  leaf: Leaf,
+  orbit: Orbit,
+  sparkles: Sparkles,
+  users: Users,
+  user: User,
+  home: Home,
+  "door-open": DoorOpen,
+  eye: Eye,
+  shield: Shield,
+  zap: Zap,
+  heart: Heart,
+  clock: Clock,
+  map: MapIcon,
+};
+
+function resolveMotifIcon(name?: string): LucideIcon {
+  if (!name) return Sparkles;
+  // 容错:同时支持 "move-down" 和 "movedown"、"MoveDown"
+  const normalized = name.trim().toLowerCase().replace(/_/g, "-");
+  return MOTIF_ICONS[normalized] ?? Sparkles;
+}
 
 // 调色板:严格按 DESIGN.md token,围绕 --accent + --accent-blue 做透明度变体
 const CHART_PALETTE = [
@@ -598,11 +653,8 @@ function ToggleButton({
   );
 }
 
-function MotifCard({
-  motif,
-}: {
-  motif: { name: string; desc: string; dreams?: string };
-}) {
+function MotifCard({ motif }: { motif: ProfileMotif }) {
+  const Icon = resolveMotifIcon(motif.icon);
   return (
     <article
       className="rounded-[14px] border p-5 transition-colors duration-200 hover:[border-color:var(--border-glow)]"
@@ -613,14 +665,15 @@ function MotifCard({
     >
       <header className="mb-2 flex items-center gap-2">
         <span
-          className="flex h-7 w-7 items-center justify-center rounded-[8px] text-[13px]"
+          className="flex h-7 w-7 items-center justify-center rounded-[8px]"
           style={{
             background: "var(--accent-soft)",
             border: "1px solid var(--border-glow)",
             color: "var(--accent)",
           }}
+          aria-hidden
         >
-          ◎
+          <Icon size={15} strokeWidth={1.8} />
         </span>
         <h4 className="font-display text-[15px] text-text-primary">
           {motif.name}
