@@ -19,6 +19,7 @@ import type {
   ProfileMotifFreq,
 } from "@/lib/prompts";
 import type { ProfileOverride } from "@/lib/profileOverride";
+import Logo from "@/components/Logo";
 
 // 调色板:严格按 DESIGN.md token,围绕 --accent + --accent-blue 做透明度变体
 const CHART_PALETTE = [
@@ -253,23 +254,9 @@ export default function ProfilePage() {
 function ProfileNav() {
   return (
     <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6 md:px-10">
-      <Link
-        href="/"
-        className="rise flex items-center gap-3 font-display text-[18px] font-semibold tracking-tight text-text-primary"
-      >
-        <span
-          className="flex h-8 w-8 items-center justify-center rounded-[9px] text-white"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--accent-blue), var(--accent))",
-            boxShadow:
-              "0 0 20px rgba(139,124,246,0.4), inset 0 0 12px rgba(255,255,255,0.18)",
-          }}
-        >
-          ☾
-        </span>
-        解梦
-      </Link>
+      <div className="rise">
+        <Logo height={40} />
+      </div>
       <div
         className="rise hidden items-center gap-1 rounded-full border px-2 py-1.5 text-sm text-text-secondary backdrop-blur md:flex"
         style={{
