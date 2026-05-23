@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* —————————————————————————————————————————————————————————
+   Token —— 严格按 DESIGN.md §1。同时供原生 CSS 引用
+   ————————————————————————————————————————————————————————— */
+:root {
+  --bg-base: #0a0a14;
+  --bg-elevated: #12121f;
+  --bg-elevated-2: #181826;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(139, 124, 246, 0.25);
+
+  --text-primary: #ececf1;
+  --text-secondary: #9a9ab0;
+  --text-tertiary: #5c5c70;
+
+  --accent: #8b7cf6;
+  --accent-blue: #5b8def;
+  --accent-soft: rgba(139, 124, 246, 0.12);
+  --glow-core: #a78bfa;
+}
+
+html,
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Helvetica Neue", sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  /* DESIGN.md §5 顶部双层径向氛围光 */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(91, 141, 239, 0.10), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(139, 124, 246, 0.08), transparent 50%);
+  background-attachment: fixed;
+}
+
+/* 全屏极淡星点(纯 CSS) */
+.starfield {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 27% 72%, rgba(255, 255, 255, 0.25), transparent 60%),
+    radial-gradient(1px 1px at 41% 33%, rgba(199, 194, 255, 0.30), transparent 60%),
+    radial-gradient(1px 1px at 58% 84%, rgba(255, 255, 255, 0.20), transparent 60%),
+    radial-gradient(1.5px 1.5px at 72% 24%, rgba(199, 194, 255, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 88% 61%, rgba(255, 255, 255, 0.25), transparent 60%),
+    radial-gradient(1px 1px at 6% 88%, rgba(255, 255, 255, 0.20), transparent 60%),
+    radial-gradient(1px 1px at 94% 8%, rgba(199, 194, 255, 0.25), transparent 60%);
+  opacity: 0.55;
+  animation: twinkle 9s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.65; }
+}
+
+/* DESIGN.md §3 标题渐变 */
+.display-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #b8b8d0 60%, #6a6a85 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.display-em {
+  background: linear-gradient(180deg, #d4c9ff 0%, #8b7cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-style: italic;
+}
+
+/* (旧 .horizon-* 光晕实现已删除,首页 hero 现在用 components/ParticleField.tsx
+    的粒子星空作为视觉中心) */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* 解读卡片顶部紫色高光线(DESIGN.md §6) */
+.interp-top-line {
+  position: relative;
+}
+.interp-top-line::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* 解读正文里的历史引用高亮(DESIGN.md §8) */
+.ref-highlight {
+  color: var(--accent);
+  font-weight: 500;
+  background: linear-gradient(180deg, transparent 65%, rgba(139, 124, 246, 0.15) 65%);
+  padding: 0 2px;
+}
+
+/* 尊重 prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

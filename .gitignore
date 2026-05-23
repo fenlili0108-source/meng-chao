@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+
+# Misc
+.DS_Store
+*.log
+.npm
+.eslintcache
+
+# Environment files —— 绝不能进 git
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# 本地数据(MVP 阶段先放本地 JSON,不要进版本控制)
+data/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# IDE
+.vscode/
+.idea/

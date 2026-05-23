@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解梦 · 设计样本</title>
+<style>
+  /* ============================================================
+     设计 TOKEN —— 从 Reflect 视觉中提取，适配解梦产品
+     这一整块就是 design.md 的核心，Claude Code 应原样使用
+     ============================================================ */
+  :root {
+    /* —— 背景：深空蓝紫，不是纯黑，带一点蓝调 —— */
+    --bg-base:        #0a0a14;   /* 页面最底色 */
+    --bg-elevated:    #12121f;   /* 卡片/浮层底色 */
+    --bg-elevated-2:  #181826;   /* 更高一层（hover、输入框） */
+
+    /* —— 边框：极细、低对比，靠微光不靠实线 —— */
+    --border-subtle:  rgba(255,255,255,0.06);
+    --border-glow:    rgba(139,124,246,0.25); /* 紫色微光边 */
+
+    /* —— 文字：三级灰阶，主文字不用纯白 —— */
+    --text-primary:   #ECECF1;   /* 标题、正文 */
+    --text-secondary: #9A9AB0;   /* 副文字、说明 */
+    --text-tertiary:  #5C5C70;   /* 最弱、占位符 */
+
+    /* —— 强调色：蓝到紫的渐变，是整个产品的灵魂 —— */
+    --accent:         #8B7CF6;   /* 主紫 */
+    --accent-blue:    #5B8DEF;   /* 偏蓝的强调 */
+    --accent-soft:    rgba(139,124,246,0.12); /* 紫色填充背景 */
+    --glow-core:      #a78bfa;   /* 光晕核心色 */
+
+    /* —— 圆角 —— */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    /* —— 字体 —— */
+    --font-display: 'Georgia', 'Songti SC', serif; /* 标题用衬线，多一点文气和专业感 */
+    --font-body: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* 顶部一层极淡的紫色氛围光，营造"深空"感而非纯黑死板 */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(91,141,239,0.10), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(139,124,246,0.08), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* ============================================================
+     导航栏 —— 居中胶囊菜单，是 Reflect 的标志性元素
+     ============================================================ */
+  nav {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 24px 40px; max-width:1200px; margin:0 auto;
+  }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:600; font-size:18px; }
+  .logo-mark {
+    width:32px; height:32px; border-radius:9px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 0 20px rgba(139,124,246,0.4);
+  }
+  .nav-menu {
+    display:flex; gap:4px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px; padding: 6px 8px;
+    backdrop-filter: blur(10px);
+  }
+  .nav-menu a {
+    color: var(--text-secondary); text-decoration:none; font-size:14px;
+    padding: 8px 16px; border-radius: 999px; transition: all .25s ease;
+  }
+  .nav-menu a:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+  .btn-ghost { color: var(--text-secondary); text-decoration:none; font-size:14px; padding:8px 14px; transition:color .2s; }
+  .btn-ghost:hover { color: var(--text-primary); }
+  .btn-primary {
+    background: linear-gradient(135deg, rgba(139,124,246,0.9), rgba(91,141,239,0.9));
+    color:#fff; text-decoration:none; font-size:14px; font-weight:500;
+    padding: 9px 18px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 4px 20px rgba(139,124,246,0.3);
+    transition: all .25s ease;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(139,124,246,0.45); }
+
+  /* ============================================================
+     HERO —— 中央发光体，纯 CSS 模拟 Reflect 那团光
+     这是"灵魂"，但用 CSS 径向渐变 + 模糊 + 呼吸动画实现，
+     不依赖任何图片素材
+     ============================================================ */
+  .hero { text-align:center; padding: 80px 20px 60px; position:relative; }
+
+  .pill {
+    display:inline-flex; align-items:center; gap:8px;
+    background: rgba(255,255,255,0.04); border:1px solid var(--border-subtle);
+    border-radius:999px; padding:7px 16px; font-size:13px; color:var(--text-secondary);
+    margin-bottom: 36px; backdrop-filter: blur(10px);
+  }
+  .pill .dot { width:6px; height:6px; border-radius:50%; background:var(--glow-core); box-shadow:0 0 8px var(--glow-core); }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(42px, 6vw, 76px);
+    font-weight: 600; letter-spacing: -0.02em; line-height:1.05;
+    /* 文字本身用从亮到暗的渐变，是 Reflect 标题的关键细节 */
+    background: linear-gradient(180deg, #ffffff 0%, #b8b8d0 60%, #6a6a85 100%);
+    -webkit-background-clip: text; background-clip:text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+  .hero .sub { font-size: 18px; color: var(--text-secondary); max-width:520px; margin:0 auto 60px; }
+
+  /* —— 中央光晕：多层径向渐变叠加 + 呼吸动画 —— */
+  .glow-stage { position:relative; height:340px; display:flex; align-items:center; justify-content:center; margin-top:-20px; }
+  .glow-core {
+    position:absolute; width:200px; height:200px; border-radius:50%;
+    background: radial-gradient(circle, var(--glow-core) 0%, rgba(139,124,246,0.6) 25%, transparent 70%);
+    filter: blur(20px); animation: breathe 6s ease-in-out infinite;
+  }
+  .glow-ring {
+    position:absolute; border-radius:50%;
+    border:1px solid rgba(139,124,246,0.15);
+    animation: pulse-ring 6s ease-in-out infinite;
+  }
+  .glow-ring.r1 { width:280px; height:280px; }
+  .glow-ring.r2 { width:420px; height:420px; animation-delay:.5s; }
+  .glow-ring.r3 { width:580px; height:580px; animation-delay:1s; }
+  .glow-orb {
+    position:relative; width:72px; height:72px; border-radius:50%; z-index:2;
+    background: radial-gradient(circle at 35% 35%, #c4b5fd, var(--accent) 60%, var(--accent-blue));
+    box-shadow: 0 0 60px rgba(139,124,246,0.7), inset 0 0 20px rgba(255,255,255,0.3);
+    animation: breathe 6s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%,100% { transform:scale(1); opacity:.9; }
+    50% { transform:scale(1.08); opacity:1; }
+  }
+  @keyframes pulse-ring {
+    0%,100% { opacity:.3; transform:scale(1); }
+    50% { opacity:.6; transform:scale(1.04); }
+  }
+
+  /* ============================================================
+     记梦输入框 —— 产品核心的"90 秒捕获"入口
+     ============================================================ */
+  .capture {
+    max-width:680px; margin: 40px auto 0; padding:0 20px;
+    animation: rise .8s ease both; animation-delay:.2s;
+  }
+  .capture-box {
+    background: var(--bg-elevated);
+    border:1px solid var(--border-subtle); border-radius: var(--radius-lg);
+    padding: 24px; text-align:left;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,124,246,0.06);
+    transition: border-color .3s ease, box-shadow .3s ease;
+  }
+  .capture-box:hover { border-color: var(--border-glow); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 30px rgba(139,124,246,0.12); }
+  .capture-label { font-size:13px; color:var(--text-tertiary); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .capture-input {
+    color:var(--text-primary); font-size:17px; font-family:var(--font-body);
+    background:transparent; border:none; outline:none; width:100%; resize:none;
+  }
+  .capture-input::placeholder { color: var(--text-tertiary); }
+  .chips { display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; }
+  .chip {
+    font-size:13px; color:var(--text-secondary);
+    background: var(--bg-elevated-2); border:1px solid var(--border-subtle);
+    border-radius:999px; padding:6px 14px; cursor:pointer; transition:all .2s;
+  }
+  .chip:hover { color:var(--text-primary); border-color:var(--border-glow); background:var(--accent-soft); }
+
+  @keyframes rise { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ============================================================
+     功能网格 —— 还原 Reflect 图3 那种克制的图标+标题+灰副标题
+     ============================================================ */
+  .features { max-width:1080px; margin: 140px auto 80px; padding:0 40px; }
+  .features-grid {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:2px;
+    background:var(--border-subtle); border:1px solid var(--border-subtle);
+    border-radius:var(--radius-md); overflow:hidden;
+  }
+  .feature {
+    background: var(--bg-base); padding:32px 28px; transition: background .3s ease;
+  }
+  .feature:hover { background: var(--bg-elevated); }
+  .feature-icon {
+    width:36px; height:36px; border-radius:9px; margin-bottom:18px;
+    background:var(--accent-soft); border:1px solid var(--border-glow);
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+  }
+  .feature h3 { font-size:16px; font-weight:600; margin-bottom:8px; color:var(--text-primary); }
+  .feature p { font-size:14px; color:var(--text-secondary); line-height:1.55; }
+
+  .section-title {
+    text-align:center; font-family:var(--font-display);
+    font-size:clamp(32px,4vw,48px); font-weight:600; letter-spacing:-0.02em;
+    background: linear-gradient(180deg,#fff,#8a8aa5);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    margin-bottom:60px;
+  }
+
+  /* —— 解读卡片样例：体现"特异性"那段解读长什么样 —— */
+  .interp { max-width:680px; margin:0 auto 120px; padding:0 20px; }
+  .interp-card {
+    background: var(--bg-elevated); border:1px solid var(--border-subtle);
+    border-radius:var(--radius-lg); padding:32px;
+    position:relative; overflow:hidden;
+  }
+  .interp-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  }
+  .interp-meta { font-size:13px; color:var(--text-tertiary); margin-bottom:16px; }
+  .interp-body { font-size:16px; color:var(--text-primary); line-height:1.75; }
+  .interp-body .ref { color:var(--accent); font-weight:500; }
+  .interp-foot { margin-top:20px; padding-top:18px; border-top:1px solid var(--border-subtle);
+    font-size:13px; color:var(--text-tertiary); }
+
+  footer { text-align:center; padding:40px; color:var(--text-tertiary); font-size:13px; }
+</style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo"><div class="logo-mark">☾</div> 解梦</div>
+    <div class="nav-menu">
+      <a href="#">记录</a><a href="#">我的梦境</a><a href="#">画像</a><a href="#">关于</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <a href="#" class="btn-ghost">登录</a>
+      <a href="#" class="btn-primary">开始记录</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="pill"><span class="dot"></span> 越用越懂你</div>
+    <h1>认识你梦里的自己</h1>
+    <p class="sub">不是占卜，不是符号字典。是一个真正记得你、能在你自己的梦境里发现模式的地方。</p>
+
+    <div class="glow-stage">
+      <div class="glow-ring r3"></div>
+      <div class="glow-ring r2"></div>
+      <div class="glow-ring r1"></div>
+      <div class="glow-core"></div>
+      <div class="glow-orb"></div>
+    </div>
+  </section>
+
+  <div class="capture">
+    <div class="capture-box">
+      <div class="capture-label">☾ 早上好。把刚才的梦倒出来吧，不用完整，碎片就好。</div>
+      <textarea class="capture-input" rows="2" placeholder="比如：又是水…这次很浑浊，在涨…有点慌"></textarea>
+      <div class="chips">
+        <span class="chip">+ 当时的情绪</span>
+        <span class="chip">+ 梦里有谁</span>
+        <span class="chip">+ 昨天发生了什么</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="features">
+    <h2 class="section-title">它和别的解梦工具不一样</h2>
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>90 秒记下一个梦</h3>
+        <p>半梦半醒也能用。碎片关键词就行，像聊天一样，AI 帮你把情绪、意象、人物理出来。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔍</div>
+        <h3>它真的记得你</h3>
+        <p>从第二个梦起，解读会引用你过去的梦——只说对你成立的话，不说放之四海的废话。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">◎</div>
+        <h3>发现你没注意的模式</h3>
+        <p>反复出现的意象、悄悄翻转的情绪、总在场的某个人——它会替你看见。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <h3>你的梦只属于你</h3>
+        <p>端到端加密，承诺不用于训练模型，随时一键删除全部数据。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">☾</div>
+        <h3>专业，但温柔</h3>
+        <p>背后是心理学，但不堆术语、不下诊断、不预言。像一个学过心理学的朋友。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">▲</div>
+        <h3>越用越深</h3>
+        <p>积累 5 个梦解锁你的潜意识画像，看见系统正在如何认识你——并随时修正它。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="interp">
+    <h2 class="section-title">解读长这样</h2>
+    <div class="interp-card">
+      <div class="interp-meta">第 7 个梦 · 刚刚</div>
+      <div class="interp-body">
+        你又一次梦到了水。<span class="ref">前两次（2 月的海、4 月的雨）你都标记为「平静」</span>，
+        但这次的水浑浊、在上涨，你标记的是「焦虑」。同一个意象，情绪却翻转了。
+        这通常值得停下来看一看——4 月之后，发生了什么吗？
+      </div>
+      <div class="interp-foot">这只是一种视角，不是结论。如果你愿意，可以告诉我更多。</div>
+    </div>
+  </section>
+
+  <footer>解梦 · 设计样本 — 这份文件本身就是给 Claude Code 的视觉参考</footer>
+
+</body>
+</html>
