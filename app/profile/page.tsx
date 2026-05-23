@@ -93,30 +93,53 @@ interface ProfileResponse {
   need?: number;
   profile?: ProfileJson;
   override?: ProfileOverride;
+  generatedAt?: string;
+  fromCache?: boolean;
   error?: string;
+}
+
+interface DreamListResponse {
+  dreams: { id: string }[];
 }
 
 export default function ProfilePage() {
   const [data, setData] = useState<ProfileResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingPrimary, setLoadingPrimary] = useState(true);
+  // 提前拿到的梦数,加载文字里可以显示"通览你的 N 个梦",首次加载时也不空
+  const [knownCount, setKnownCount] = useState<number | null>(null);
+  // 手动「重新生成」状态
+  const [regenerating, setRegenerating] = useState(false);
 
   // 修改"系统对你的理解"的编辑状态
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [savingOverride, setSavingOverride] = useState(false);
 
+  async function loadProfile(force: boolean) {
+    const url = force ? "/api/profile?force=1" : "/api/profile";
+    const res = await fetch(url, { cache: "no-store" });
+    const json = (await res.json()) as ProfileResponse;
+    if (!res.ok && json.error) {
+      throw new Error(json.error);
+    }
+    return json;
+  }
+
   useEffect(() => {
     let cancelled = false;
+    // 并行:画像请求(可能慢) + 梦列表(快,只为拿 count 显示在加载文字里)
+    void fetch("/api/dreams", { cache: "no-store" })
+      .then((r) => r.json() as Promise<DreamListResponse>)
+      .then((d) => {
+        if (!cancelled) setKnownCount((d.dreams ?? []).length);
+      })
+      .catch(() => undefined);
+
     void (async () => {
       try {
-        const res = await fetch("/api/profile", { cache: "no-store" });
-        const json = (await res.json()) as ProfileResponse;
+        const json = await loadProfile(false);
         if (cancelled) return;
-        if (!res.ok && json.error) {
-          setError(json.error);
-          return;
-        }
         setData(json);
       } catch (e: unknown) {
         if (!cancelled)
@@ -129,6 +152,20 @@ export default function ProfilePage() {
       cancelled = true;
     };
   }, []);
+
+  async function handleRegenerate() {
+    if (regenerating) return;
+    setRegenerating(true);
+    setError(null);
+    try {
+      const json = await loadProfile(true);
+      setData(json);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "重新生成失败,稍后再试。");
+    } finally {
+      setRegenerating(false);
+    }
+  }
 
   const override = data?.override;
   const aiUnderstanding = data?.profile?.understanding ?? "";
@@ -187,13 +224,42 @@ export default function ProfilePage() {
           className="rise mt-3 max-w-[560px] text-[14px] leading-[1.7] text-text-secondary"
           style={{ animationDelay: ".18s" }}
         >
-          每次打开这一页,会重新通览你的全部梦,生成最新的总览。
+          只有当你记下新的梦,这一页才会重新通览全部梦生成。否则保留上次的结果,不重复打扰你和 AI。
           {data && !data.locked && (
             <span className="block text-text-tertiary">
               基于你目前记录的 {data.totalDreams} 个梦。
+              {data.generatedAt && (
+                <>
+                  {" "}· 上次生成:{formatGeneratedAt(data.generatedAt)}
+                </>
+              )}
             </span>
           )}
         </p>
+
+        {/* 重新生成按钮:仅在解锁、非加载、非锁定时显示 */}
+        {data && !data.locked && !loadingPrimary && (
+          <div className="mt-5">
+            <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="inline-flex items-center gap-2 rounded-[10px] border px-3.5 py-1.5 text-[12.5px] text-text-secondary transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+              style={{
+                borderColor: "var(--border-subtle)",
+                background: "rgba(255,255,255,0.02)",
+              }}
+            >
+              {regenerating ? (
+                <>
+                  <SpinnerSm />
+                  正在重新生成…
+                </>
+              ) : (
+                <>↻ 重新生成画像</>
+              )}
+            </button>
+          </div>
+        )}
       </header>
 
       {error && (
@@ -211,15 +277,15 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* 加载态 */}
-      {loadingPrimary && !error && (
+      {/* 加载态:首次加载 或 用户点了「重新生成」 */}
+      {(loadingPrimary || regenerating) && !error && (
         <div className="mx-auto max-w-5xl px-6 pb-20 md:px-10">
-          <PrimarySkeleton />
+          <PrimarySkeleton count={knownCount ?? data?.totalDreams ?? null} />
         </div>
       )}
 
       {/* 锁定态 */}
-      {data?.locked && !error && (
+      {data?.locked && !error && !regenerating && (
         <section className="mx-auto max-w-5xl px-6 pb-20 md:px-10">
           <LockedState
             need={data.need ?? Math.max(0, data.unlockAt - data.totalDreams)}
@@ -230,7 +296,7 @@ export default function ProfilePage() {
       )}
 
       {/* 解锁态:三大板块 */}
-      {data && !data.locked && !error && data.profile && (
+      {data && !data.locked && !error && !regenerating && data.profile && (
         <>
           {/* 板块 1:系统对你的理解 */}
           <section className="mx-auto max-w-5xl px-6 pb-10 md:px-10">
@@ -726,27 +792,81 @@ function EmptyNote({ children }: { children: React.ReactNode }) {
   );
 }
 
-// 简单加载骨架
-function PrimarySkeleton() {
+// 有质感的加载态:呼吸光球 + 多层光环 + 文字 + 一句轻提示
+function PrimarySkeleton({ count }: { count: number | null }) {
   return (
-    <div className="space-y-4">
-      <div
-        className="h-40 rounded-[20px] border"
-        style={{
-          background: "var(--bg-elevated)",
-          borderColor: "var(--border-subtle)",
-        }}
-      />
-      <div
-        className="h-28 rounded-[14px] border"
-        style={{
-          background: "var(--bg-elevated)",
-          borderColor: "var(--border-subtle)",
-        }}
-      />
-      <div className="text-center text-[12px] text-text-tertiary">
-        正在通览你的全部梦……
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="relative mb-8 flex h-[200px] w-[200px] items-center justify-center">
+        {/* 大范围紫色光晕 */}
+        <div
+          className="absolute h-[220px] w-[220px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(167,139,250,0.45) 0%, rgba(139,124,246,0.18) 35%, transparent 70%)",
+            filter: "blur(20px)",
+            animation: "loading-breathe 3.2s ease-in-out infinite",
+          }}
+        />
+        {/* 中层光环 */}
+        <div
+          className="absolute h-[160px] w-[160px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(167,139,250,0.55) 0%, rgba(139,124,246,0.20) 45%, transparent 75%)",
+            filter: "blur(10px)",
+            animation: "loading-breathe 2.4s ease-in-out infinite",
+            animationDelay: "0.3s",
+          }}
+        />
+        {/* 核心 */}
+        <div
+          className="relative h-[70px] w-[70px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at 35% 35%, #ffffff 0%, #d4c9ff 18%, #8B7CF6 55%, #5B8DEF 100%)",
+            boxShadow:
+              "0 0 60px rgba(139,124,246,0.7), 0 0 100px rgba(91,141,239,0.30), inset 0 0 20px rgba(255,255,255,0.35)",
+            animation: "loading-breathe 2.4s ease-in-out infinite",
+          }}
+        />
+        {/* 慢速旋转的微弱光环 */}
+        <div
+          className="absolute h-[200px] w-[200px] rounded-full"
+          style={{
+            border: "1px solid rgba(139,124,246,0.18)",
+            animation: "loading-spin 12s linear infinite",
+          }}
+        />
+        <div
+          className="absolute h-[140px] w-[140px] rounded-full"
+          style={{
+            border: "1px solid rgba(139,124,246,0.12)",
+            animation: "loading-spin 18s linear infinite reverse",
+          }}
+        />
       </div>
+
+      <div className="font-display text-[18px] text-text-primary">
+        正在通览你
+        {count !== null && (
+          <>的 <span style={{ color: "var(--accent)" }}>{count}</span> 个</>
+        )}
+        梦……
+      </div>
+      <div className="mt-2 text-[13px] text-text-tertiary">
+        第一次或新增梦境后会重新生成,通常需要十几秒到半分钟。
+      </div>
+
+      <style jsx>{`
+        @keyframes loading-breathe {
+          0%, 100% { transform: scale(1); opacity: 0.88; }
+          50%      { transform: scale(1.10); opacity: 1; }
+        }
+        @keyframes loading-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -915,4 +1035,30 @@ function LockSvg() {
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </svg>
   );
+}
+
+function SpinnerSm() {
+  return (
+    <span
+      className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-text-tertiary/40 border-t-text-primary"
+      aria-hidden
+    />
+  );
+}
+
+// "上次生成"友好时间:30 秒内显示"刚刚",60 分钟内显示"X 分钟前",
+// 24 小时内显示"X 小时前",更久远的显示具体日期
+function formatGeneratedAt(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "";
+  const diff = Date.now() - t;
+  if (diff < 30_000) return "刚刚";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分钟前`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小时前`;
+  const d = new Date(t);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day} ${hh}:${mm}`;
 }

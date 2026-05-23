@@ -8,17 +8,21 @@ import {
 } from "@/lib/prompts";
 import { readAllDreams } from "@/lib/storage";
 import { readOverride } from "@/lib/profileOverride";
+import { computeDreamsHash, readCache, writeCache } from "@/lib/profileCache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const UNLOCK_AT = 5;
 
-export async function GET() {
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const force = url.searchParams.get("force") === "1";
+
   const dreams = await readAllDreams();
   const totalDreams = dreams.length;
 
-  // 解锁门槛
+  // 解锁门槛:不到 5 个梦直接锁,不调 AI
   if (totalDreams < UNLOCK_AT) {
     const override = await readOverride();
     return NextResponse.json({
@@ -30,6 +34,26 @@ export async function GET() {
     });
   }
 
+  const dreamsHash = computeDreamsHash(dreams);
+  const override = await readOverride();
+
+  // ✦ 命中缓存:只要哈希一致且不是 force 刷新,直接复用
+  if (!force) {
+    const cached = await readCache();
+    if (cached && cached.dreamsHash === dreamsHash) {
+      return NextResponse.json({
+        locked: false,
+        totalDreams,
+        unlockAt: UNLOCK_AT,
+        profile: cached.profile,
+        override,
+        generatedAt: cached.generatedAt,
+        fromCache: true,
+      });
+    }
+  }
+
+  // —— 缓存未命中,真正调 AI ——
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -65,7 +89,6 @@ export async function GET() {
         { role: "user", content: userMessage },
       ],
       temperature: 0.6,
-      // 鼓励返回干净 JSON
       response_format: { type: "json_object" },
     });
     raw = completion.choices[0]?.message?.content?.trim() ?? "";
@@ -81,8 +104,6 @@ export async function GET() {
   }
 
   let profile: ProfileJson = parseProfileJson(raw);
-
-  // 如果完全没解出 understanding(JSON 彻底坏),给个温柔降级
   if (!profile.understanding && profile.motifs.length === 0 && profile.emotion_distribution.length === 0) {
     profile = {
       understanding: "",
@@ -92,7 +113,17 @@ export async function GET() {
     };
   }
 
-  const override = await readOverride();
+  const generatedAt = new Date().toISOString();
+
+  // 落盘缓存(只在有 understanding 时才存,坏结果不污染缓存)
+  if (profile.understanding) {
+    await writeCache({
+      dreamsHash,
+      dreamsCount: totalDreams,
+      generatedAt,
+      profile,
+    });
+  }
 
   return NextResponse.json({
     locked: false,
@@ -100,5 +131,7 @@ export async function GET() {
     unlockAt: UNLOCK_AT,
     profile,
     override,
+    generatedAt,
+    fromCache: false,
   });
 }
