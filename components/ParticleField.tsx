@@ -242,7 +242,16 @@ export default function ParticleField() {
     <div
       ref={wrapRef}
       aria-hidden
-      className="pointer-events-none absolute inset-0 z-0"
+      // 向下延伸 600px,粒子有更大的纵向舞台,首屏不会被压扁。
+      // 底部用 mask-image 柔和淡出,避免硬切到下方正文区。
+      className="pointer-events-none absolute left-0 right-0 top-0 z-0"
+      style={{
+        bottom: "-600px",
+        WebkitMaskImage:
+          "linear-gradient(180deg, #000 0%, #000 65%, transparent 100%)",
+        maskImage:
+          "linear-gradient(180deg, #000 0%, #000 65%, transparent 100%)",
+      }}
     >
       <canvas
         ref={canvasRef}

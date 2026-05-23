@@ -119,46 +119,43 @@ export default function Home() {
           </Link>
           <ProfileNavLink />
         </div>
-        <div className="rise text-xs text-text-tertiary">本地版 · 台阶一</div>
+        <div
+          className="rise inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs text-text-secondary backdrop-blur"
+          style={{
+            borderColor: "var(--border-subtle)",
+            background: "rgba(255,255,255,0.04)",
+          }}
+        >
+          <span
+            className="h-1.5 w-1.5 rounded-full"
+            style={{
+              background: "var(--glow-core)",
+              boxShadow: "0 0 10px var(--glow-core)",
+            }}
+          />
+          越用越懂你
+        </div>
       </nav>
 
       {/* —— Hero:粒子星空作为背景层,文字浮在上面 —— */}
-      <section className="relative overflow-hidden px-6 pt-6 pb-12 text-center md:pt-10">
+      <section className="relative px-6 pt-10 pb-16 text-center md:pt-14 md:pb-20">
         <ParticleField />
+
         <div className="relative z-10">
-          <div
-            className="rise mx-auto mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs text-text-secondary backdrop-blur"
-            style={{
-              borderColor: "var(--border-subtle)",
-              background: "rgba(255,255,255,0.04)",
-            }}
-          >
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{
-                background: "var(--glow-core)",
-                boxShadow: "0 0 10px var(--glow-core)",
-              }}
-            />
-            越用越懂你
-          </div>
           <h1
             className="rise font-display text-[44px] font-semibold leading-[1.04] tracking-tight md:text-[64px]"
             style={{ animationDelay: ".08s" }}
           >
-            <span className="display-gradient">认识你</span>
-            <span className="display-em">梦里</span>
-            <span className="display-gradient">的自己</span>
+            <span className="display-gradient">读懂</span>
+            <span className="display-em">你的梦</span>
+            <span className="display-gradient">,然后读懂你</span>
           </h1>
           <p
-            className="rise mx-auto mt-5 max-w-[520px] text-[15px] leading-[1.7] text-text-secondary md:text-[17px]"
+            className="rise mx-auto mt-6 max-w-[520px] text-[15px] leading-[1.7] text-text-secondary md:text-[17px]"
             style={{ animationDelay: ".18s" }}
           >
-            倒出一段梦,再倒出一段。它会记得你说过的每一个。
+            它会记得你的每一个梦,然后把它们连成你。
           </p>
-
-          {/* 留一片空间,让粒子有舞台高度。原来这里是光球,现在让出位置给粒子背景。 */}
-          <div className="h-[280px] md:h-[360px]" aria-hidden />
         </div>
       </section>
 
