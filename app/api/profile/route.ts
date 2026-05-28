@@ -9,6 +9,8 @@ import {
 import { readAllDreams } from "@/lib/storage";
 import { readOverride } from "@/lib/profileOverride";
 import { computeDreamsHash, readCache, writeCache } from "@/lib/profileCache";
+import { requireUser } from "@/lib/supabase/server";
+import { consumeAiCall } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,15 +18,19 @@ export const dynamic = "force-dynamic";
 const UNLOCK_AT = 5;
 
 export async function GET(req: Request) {
+  const { user, supabase } = await requireUser();
+  if (!user) {
+    return NextResponse.json({ error: "未登录。" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const force = url.searchParams.get("force") === "1";
 
-  const dreams = await readAllDreams();
+  const dreams = await readAllDreams(supabase, user.id);
   const totalDreams = dreams.length;
 
-  // 解锁门槛:不到 5 个梦直接锁,不调 AI
   if (totalDreams < UNLOCK_AT) {
-    const override = await readOverride();
+    const override = await readOverride(supabase, user.id);
     return NextResponse.json({
       locked: true,
       totalDreams,
@@ -35,11 +41,11 @@ export async function GET(req: Request) {
   }
 
   const dreamsHash = computeDreamsHash(dreams);
-  const override = await readOverride();
+  const override = await readOverride(supabase, user.id);
 
-  // ✦ 命中缓存:只要哈希一致且不是 force 刷新,直接复用
+  // 命中缓存:直接返回
   if (!force) {
-    const cached = await readCache();
+    const cached = await readCache(supabase, user.id);
     if (cached && cached.dreamsHash === dreamsHash) {
       return NextResponse.json({
         locked: false,
@@ -53,15 +59,22 @@ export async function GET(req: Request) {
     }
   }
 
-  // —— 缓存未命中,真正调 AI ——
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      {
-        error:
-          "服务端没找到 DEEPSEEK_API_KEY。请在项目根目录创建 .env.local 并填入,然后重启 dev server。",
-      },
+      { error: "服务端没找到 DEEPSEEK_API_KEY。" },
       { status: 500 }
+    );
+  }
+
+  // 真要调 AI 之前过 rate limit
+  const usage = await consumeAiCall(supabase, user.id);
+  if (!usage.ok) {
+    return NextResponse.json(
+      {
+        error: `今天的 AI 配额用完了(${usage.limit} 次/天)。你可以继续看上次生成的画像。`,
+      },
+      { status: 429 }
     );
   }
 
@@ -75,10 +88,7 @@ export async function GET(req: Request) {
     }))
   );
 
-  const client = new OpenAI({
-    apiKey,
-    baseURL: "https://api.deepseek.com",
-  });
+  const client = new OpenAI({ apiKey, baseURL: "https://api.deepseek.com" });
 
   let raw: string;
   try {
@@ -104,7 +114,11 @@ export async function GET(req: Request) {
   }
 
   let profile: ProfileJson = parseProfileJson(raw);
-  if (!profile.understanding && profile.motifs.length === 0 && profile.emotion_distribution.length === 0) {
+  if (
+    !profile.understanding &&
+    profile.motifs.length === 0 &&
+    profile.emotion_distribution.length === 0
+  ) {
     profile = {
       understanding: "",
       motifs: [],
@@ -115,9 +129,8 @@ export async function GET(req: Request) {
 
   const generatedAt = new Date().toISOString();
 
-  // 落盘缓存(只在有 understanding 时才存,坏结果不污染缓存)
   if (profile.understanding) {
-    await writeCache({
+    await writeCache(supabase, user.id, {
       dreamsHash,
       dreamsCount: totalDreams,
       generatedAt,

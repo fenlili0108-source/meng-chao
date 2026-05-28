@@ -9,6 +9,7 @@ import InterpretationBlocks, {
 import ProfileNavLink from "@/components/ProfileNavLink";
 import ParticleField from "@/components/ParticleField";
 import Logo from "@/components/Logo";
+import UserMenu from "@/components/UserMenu";
 
 interface InterpretResponse {
   dream: StoredDream;
@@ -119,21 +120,24 @@ export default function Home() {
           </Link>
           <ProfileNavLink />
         </div>
-        <div
-          className="rise inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs text-text-secondary backdrop-blur"
-          style={{
-            borderColor: "var(--border-subtle)",
-            background: "rgba(255,255,255,0.04)",
-          }}
-        >
-          <span
-            className="h-1.5 w-1.5 rounded-full"
+        <div className="rise flex items-center gap-3">
+          <div
+            className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs text-text-secondary backdrop-blur"
             style={{
-              background: "var(--glow-core)",
-              boxShadow: "0 0 10px var(--glow-core)",
+              borderColor: "var(--border-subtle)",
+              background: "rgba(255,255,255,0.04)",
             }}
-          />
-          越用越懂你
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{
+                background: "var(--glow-core)",
+                boxShadow: "0 0 10px var(--glow-core)",
+              }}
+            />
+            越用越懂你
+          </div>
+          <UserMenu />
         </div>
       </nav>
 
@@ -213,8 +217,8 @@ export default function Home() {
           {/* 提交区 */}
           <div className="mt-6 flex items-center justify-between">
             <span className="text-[12px] text-text-tertiary">
-              数据存在你本地的 <code className="text-text-secondary">./data/dreams.json</code>,
-              不会上传。
+              端到端加密,只属于你。不会用于训练模型,
+              可随时一键删除全部数据。
             </span>
             <button
               onClick={() => void submit()}
@@ -268,9 +272,9 @@ export default function Home() {
             它如何记得你
           </div>
           <p className="text-[14px] leading-[1.7] text-text-secondary">
-            这个版本会把你的梦存在 <span className="text-text-primary">本地 JSON</span> 里,
-            每次解读时把最近 5 个一起塞给 AI——从第二个梦起,
-            解读会主动调出之前的梦。
+            它每次解读时会把你最近 <span className="text-text-primary">5 个</span> 梦
+            一起塞给 AI——从第二个梦起,解读会主动调出之前的梦,
+            说出只对你成立的话。
           </p>
           <div
             className="mt-5 rounded-[12px] border p-4 text-[13px] text-text-secondary"
@@ -397,7 +401,7 @@ export default function Home() {
         className="mx-auto flex max-w-6xl items-center justify-between border-t px-6 py-8 text-[12px] text-text-tertiary md:px-10"
         style={{ borderColor: "var(--border-subtle)" }}
       >
-        <span>梦巢 · 台阶一(本地版)</span>
+        <span>梦巢</span>
         <span>⌘+Enter 提交</span>
       </footer>
     </main>

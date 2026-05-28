@@ -8,6 +8,7 @@ import InterpretationBlocks, {
 } from "@/components/InterpretationBlocks";
 import ProfileNavLink from "@/components/ProfileNavLink";
 import Logo from "@/components/Logo";
+import UserMenu from "@/components/UserMenu";
 
 export default function DreamsPage() {
   const [dreams, setDreams] = useState<StoredDream[] | null>(null);
@@ -70,16 +71,19 @@ export default function DreamsPage() {
           </span>
           <ProfileNavLink />
         </div>
-        <Link
-          href="/"
-          className="rise rounded-[10px] border px-4 py-2 text-[13px] text-text-secondary transition-colors hover:text-text-primary"
-          style={{
-            borderColor: "var(--border-subtle)",
-            background: "rgba(255,255,255,0.02)",
-          }}
-        >
-          + 新的梦
-        </Link>
+        <div className="rise flex items-center gap-3">
+          <Link
+            href="/"
+            className="rounded-[10px] border px-4 py-2 text-[13px] text-text-secondary transition-colors hover:text-text-primary"
+            style={{
+              borderColor: "var(--border-subtle)",
+              background: "rgba(255,255,255,0.02)",
+            }}
+          >
+            + 新的梦
+          </Link>
+          <UserMenu />
+        </div>
       </nav>
 
       {/* —— Header —— */}
@@ -168,7 +172,7 @@ export default function DreamsPage() {
         className="mx-auto flex max-w-5xl items-center justify-between border-t px-6 py-8 text-[12px] text-text-tertiary md:px-10"
         style={{ borderColor: "var(--border-subtle)" }}
       >
-        <span>梦巢 · 台阶一(本地版)</span>
+        <span>梦巢</span>
         <Link href="/" className="hover:text-text-secondary">
           ← 回到记录
         </Link>

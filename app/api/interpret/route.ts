@@ -7,6 +7,8 @@ import {
   type HistoricalDream,
 } from "@/lib/prompts";
 import { appendDream, readDreamsDesc } from "@/lib/storage";
+import { requireUser } from "@/lib/supabase/server";
+import { consumeAiCall } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -18,14 +20,16 @@ interface InterpretBody {
 }
 
 export async function POST(req: Request) {
+  const { user, supabase } = await requireUser();
+  if (!user) {
+    return NextResponse.json({ error: "未登录。" }, { status: 401 });
+  }
+
   let body: InterpretBody;
   try {
     body = (await req.json()) as InterpretBody;
   } catch {
-    return NextResponse.json(
-      { error: "请求格式错误。" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "请求格式错误。" }, { status: 400 });
   }
 
   const rawInput = (body.rawInput ?? "").trim();
@@ -39,16 +43,24 @@ export async function POST(req: Request) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      {
-        error:
-          "服务端没找到 DEEPSEEK_API_KEY。请在项目根目录创建 .env.local 并填入,然后重启 dev server。",
-      },
+      { error: "服务端没找到 DEEPSEEK_API_KEY。" },
       { status: 500 }
     );
   }
 
+  // Rate limit:每天 20 次 AI 调用
+  const usage = await consumeAiCall(supabase, user.id);
+  if (!usage.ok) {
+    return NextResponse.json(
+      {
+        error: `今天的 AI 配额用完了(${usage.limit} 次/天),明天再来。`,
+      },
+      { status: 429 }
+    );
+  }
+
   // 检索历史(台阶一:最近 5 个)
-  const all = await readDreamsDesc();
+  const all = await readDreamsDesc(supabase, user.id);
   const history: HistoricalDream[] = all.slice(0, 5).map((d) => ({
     id: d.id,
     createdAt: d.createdAt,
@@ -66,7 +78,6 @@ export async function POST(req: Request) {
     history
   );
 
-  // DeepSeek 用 OpenAI 兼容格式
   const client = new OpenAI({
     apiKey,
     baseURL: "https://api.deepseek.com",
@@ -90,13 +101,10 @@ export async function POST(req: Request) {
       );
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "未知错误";
-    // 给用户的提示要友好,但把真实错误塞进 details 方便排查
+    const message = err instanceof Error ? err.message : "未知错误";
     return NextResponse.json(
       {
-        error:
-          "调用解读引擎时出错了。可能是网络或 API key 的问题,稍后再试一次。",
+        error: "调用解读引擎时出错了。可能是网络或 API key 的问题,稍后再试一次。",
         details: message,
       },
       { status: 502 }
@@ -105,7 +113,7 @@ export async function POST(req: Request) {
 
   const parsed = parseInterpretation(interpretation);
 
-  const saved = await appendDream({
+  const saved = await appendDream(supabase, user.id, {
     rawInput,
     emotions: body.emotions?.trim() || undefined,
     entities: body.entities?.trim() || undefined,
@@ -122,6 +130,10 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  const all = await readDreamsDesc();
+  const { user, supabase } = await requireUser();
+  if (!user) {
+    return NextResponse.json({ error: "未登录。" }, { status: 401 });
+  }
+  const all = await readDreamsDesc(supabase, user.id);
   return NextResponse.json({ dreams: all });
 }

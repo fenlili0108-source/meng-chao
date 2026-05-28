@@ -5,6 +5,7 @@ import {
   type OverrideStatus,
   type ProfileOverride,
 } from "@/lib/profileOverride";
+import { requireUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,11 +16,20 @@ interface PatchBody {
 }
 
 export async function GET() {
-  const override = await readOverride();
+  const { user, supabase } = await requireUser();
+  if (!user) {
+    return NextResponse.json({ error: "未登录。" }, { status: 401 });
+  }
+  const override = await readOverride(supabase, user.id);
   return NextResponse.json({ override });
 }
 
 export async function PATCH(req: Request) {
+  const { user, supabase } = await requireUser();
+  if (!user) {
+    return NextResponse.json({ error: "未登录。" }, { status: 401 });
+  }
+
   let body: PatchBody;
   try {
     body = (await req.json()) as PatchBody;
@@ -47,6 +57,6 @@ export async function PATCH(req: Request) {
     next.userText = text;
   }
 
-  const saved = await writeOverride(next);
+  const saved = await writeOverride(supabase, user.id, next);
   return NextResponse.json({ override: saved });
 }

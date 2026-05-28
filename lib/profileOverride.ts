@@ -1,56 +1,57 @@
-// 「系统对你的理解」一句话——用户对它的反馈和修正。
-// 本地 JSON,和 data/dreams.json 同目录。
-//
-// 状态机:
-//   - none      : 用户还没操作
-//   - confirmed : 用户点了「准」
-//   - rejected  : 用户点了「不准」(但还没自己写)
-//   - edited    : 用户写了自己的版本
+// 「系统对你的理解」用户反馈/修改 —— Supabase 版
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type OverrideStatus = "none" | "confirmed" | "rejected" | "edited";
 
 export interface ProfileOverride {
   status: OverrideStatus;
-  // 当 status === "edited" 时,这就是用户写的版本,前端要优先展示它
   userText?: string;
   updatedAt?: string;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const FILE = path.join(DATA_DIR, "profile_override.json");
-
 const DEFAULT: ProfileOverride = { status: "none" };
 
-async function ensure(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  try {
-    await fs.access(FILE);
-  } catch {
-    await fs.writeFile(FILE, JSON.stringify(DEFAULT, null, 2), "utf-8");
-  }
-}
-
-export async function readOverride(): Promise<ProfileOverride> {
-  await ensure();
-  try {
-    const raw = await fs.readFile(FILE, "utf-8");
-    const parsed = JSON.parse(raw) as ProfileOverride;
-    if (parsed && typeof parsed === "object" && parsed.status) return parsed;
-    return DEFAULT;
-  } catch {
-    return DEFAULT;
-  }
-}
-
-export async function writeOverride(o: ProfileOverride): Promise<ProfileOverride> {
-  await ensure();
-  const next: ProfileOverride = {
-    ...o,
-    updatedAt: new Date().toISOString(),
+export async function readOverride(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<ProfileOverride> {
+  const { data, error } = await supabase
+    .from("profile_overrides")
+    .select("status, user_text, updated_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return DEFAULT;
+  return {
+    status: (data.status as OverrideStatus) ?? "none",
+    userText: data.user_text ?? undefined,
+    updatedAt: data.updated_at ?? undefined,
   };
-  await fs.writeFile(FILE, JSON.stringify(next, null, 2), "utf-8");
-  return next;
+}
+
+export async function writeOverride(
+  supabase: SupabaseClient,
+  userId: string,
+  o: ProfileOverride
+): Promise<ProfileOverride> {
+  const { data, error } = await supabase
+    .from("profile_overrides")
+    .upsert(
+      {
+        user_id: userId,
+        status: o.status,
+        user_text: o.userText ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    )
+    .select("status, user_text, updated_at")
+    .single();
+  if (error) throw error;
+  return {
+    status: data.status as OverrideStatus,
+    userText: data.user_text ?? undefined,
+    updatedAt: data.updated_at ?? undefined,
+  };
 }

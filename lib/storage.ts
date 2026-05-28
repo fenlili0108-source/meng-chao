@@ -1,65 +1,97 @@
-// 本地 JSON 存储。只在服务端用。
-// 台阶一目的:把"输入梦 → 解读 → 存下来 → 下次能引用"跑通,不上数据库。
-// 文件路径:./data/dreams.json,已在 .gitignore。
+// 梦境存储 —— Supabase Postgres (台阶二:多用户)
+//
+// 函数签名尽量兼容旧版,把数据库 snake_case ↔ 应用 camelCase 的转换
+// 局限在这一层。所有读写自动走 RLS:用户只能看到/写入 user_id = auth.uid() 的行,
+// 数据库层强制隔离。
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import crypto from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface StoredDream {
   id: string;
-  createdAt: string; // ISO
+  createdAt: string;
   rawInput: string;
   emotions?: string;
   entities?: string;
   dayContext?: string;
-  // 模型原文,原样存档(含 [[这个梦]] / [[和你过去的梦]] 标记)
   interpretation: string;
-  // 切好的两段。老数据没有这两个字段,前端会用 parseInterpretation 现切。
   interpretationThis?: string;
   interpretationRelated?: string;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "dreams.json");
-
-async function ensureDataFile(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  try {
-    await fs.access(DATA_FILE);
-  } catch {
-    await fs.writeFile(DATA_FILE, "[]", "utf-8");
-  }
+interface DreamRow {
+  id: string;
+  user_id: string;
+  created_at: string;
+  raw_input: string;
+  emotions: string | null;
+  entities: string | null;
+  day_context: string | null;
+  interpretation: string | null;
+  interpretation_this: string | null;
+  interpretation_related: string | null;
 }
 
-export async function readAllDreams(): Promise<StoredDream[]> {
-  await ensureDataFile();
-  const raw = await fs.readFile(DATA_FILE, "utf-8");
-  try {
-    const parsed = JSON.parse(raw) as StoredDream[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch {
-    return [];
-  }
+function rowToDream(r: DreamRow): StoredDream {
+  return {
+    id: r.id,
+    createdAt: r.created_at,
+    rawInput: r.raw_input,
+    emotions: r.emotions ?? undefined,
+    entities: r.entities ?? undefined,
+    dayContext: r.day_context ?? undefined,
+    interpretation: r.interpretation ?? "",
+    interpretationThis: r.interpretation_this ?? undefined,
+    interpretationRelated: r.interpretation_related ?? undefined,
+  };
 }
 
-// 按 createdAt 倒序返回(最新在前)
-export async function readDreamsDesc(): Promise<StoredDream[]> {
-  const all = await readAllDreams();
-  return [...all].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+// 全部梦,按 createdAt 升序(便于哈希、按时间塞 prompt)
+export async function readAllDreams(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<StoredDream[]> {
+  const { data, error } = await supabase
+    .from("dreams")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as DreamRow[]).map(rowToDream);
+}
+
+// 全部梦,倒序(列表页用)
+export async function readDreamsDesc(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<StoredDream[]> {
+  const { data, error } = await supabase
+    .from("dreams")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as DreamRow[]).map(rowToDream);
 }
 
 export async function appendDream(
+  supabase: SupabaseClient,
+  userId: string,
   input: Omit<StoredDream, "id" | "createdAt">
 ): Promise<StoredDream> {
-  const all = await readAllDreams();
-  const dream: StoredDream = {
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    ...input,
-  };
-  all.push(dream);
-  await fs.writeFile(DATA_FILE, JSON.stringify(all, null, 2), "utf-8");
-  return dream;
+  const { data, error } = await supabase
+    .from("dreams")
+    .insert({
+      user_id: userId,
+      raw_input: input.rawInput,
+      emotions: input.emotions ?? null,
+      entities: input.entities ?? null,
+      day_context: input.dayContext ?? null,
+      interpretation: input.interpretation,
+      interpretation_this: input.interpretationThis ?? null,
+      interpretation_related: input.interpretationRelated ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return rowToDream(data as DreamRow);
 }
