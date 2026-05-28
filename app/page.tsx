@@ -187,7 +187,7 @@ export default function Home() {
             onChange={(e) => setRawInput(e.target.value)}
             onKeyDown={onTextareaKey}
             rows={4}
-            placeholder="比如:又是水…这次很浑浊,在涨…有点慌"
+            placeholder="比如:走在一条很长的走廊,灯一盏一盏亮起来"
             className="w-full resize-none bg-transparent text-[17px] text-text-primary outline-none placeholder:text-text-tertiary"
             style={{ minHeight: 100 }}
           />
@@ -196,7 +196,7 @@ export default function Home() {
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <FieldInput
               label="当时的情绪"
-              placeholder="慌、平静、愤怒……"
+              placeholder="平静、好奇、有点失落……"
               value={emotions}
               onChange={setEmotions}
             />
