@@ -66,10 +66,12 @@ function LoginInner() {
               "0 24px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(139,124,246,0.05)",
           }}
         >
-          <button
+          {/* Google 登录暂未配置 OAuth provider,先隐藏。要开通时把这段注释去掉,
+              并在 Supabase + Google Cloud Console 配置 Google provider。 */}
+          {/* <button
             onClick={() => signIn("google")}
             disabled={loading !== null}
-            className="flex w-full items-center justify-center gap-3 rounded-[10px] border px-4 py-3 text-[14px] text-text-primary transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mb-3 flex w-full items-center justify-center gap-3 rounded-[10px] border px-4 py-3 text-[14px] text-text-primary transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               borderColor: "var(--border-subtle)",
               background: "rgba(255,255,255,0.02)",
@@ -77,12 +79,12 @@ function LoginInner() {
           >
             <GoogleSvg />
             {loading === "google" ? "正在跳转 Google…" : "用 Google 继续"}
-          </button>
+          </button> */}
 
           <button
             onClick={() => signIn("github")}
             disabled={loading !== null}
-            className="mt-3 flex w-full items-center justify-center gap-3 rounded-[10px] border px-4 py-3 text-[14px] text-text-primary transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-3 rounded-[10px] border px-4 py-3 text-[14px] text-text-primary transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               borderColor: "var(--border-subtle)",
               background: "rgba(255,255,255,0.02)",
