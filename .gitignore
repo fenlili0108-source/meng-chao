@@ -21,7 +21,8 @@ build/
 .env.production.local
 
 # 本地数据(MVP 阶段先放本地 JSON,不要进版本控制)
-data/
+# 加前导 / 限定只匹配项目根目录,避免误伤 app/api/account/data/ 之类的代码路径
+/data/
 
 # TypeScript
 *.tsbuildinfo
