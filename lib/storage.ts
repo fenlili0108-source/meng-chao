@@ -95,3 +95,32 @@ export async function appendDream(
   if (error) throw error;
   return rowToDream(data as DreamRow);
 }
+
+// 删除一条梦。RLS 已经保证只能删自己的,这里再带 user_id 是双保险。
+// 返回真实删除的行数。0 表示该 id 不存在或不属于该用户。
+export async function deleteDream(
+  supabase: SupabaseClient,
+  userId: string,
+  dreamId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("dreams")
+    .delete({ count: "exact" })
+    .eq("user_id", userId)
+    .eq("id", dreamId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+// 删光该用户的所有梦。返回删了几行。
+export async function deleteAllDreamsForUser(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("dreams")
+    .delete({ count: "exact" })
+    .eq("user_id", userId);
+  if (error) throw error;
+  return count ?? 0;
+}

@@ -117,6 +117,9 @@ export default function ProfilePage() {
   const [draft, setDraft] = useState("");
   const [savingOverride, setSavingOverride] = useState(false);
 
+  // 删除全部数据的状态
+  const [wiping, setWiping] = useState(false);
+
   async function loadProfile(force: boolean) {
     const url = force ? "/api/profile?force=1" : "/api/profile";
     const res = await fetch(url, { cache: "no-store" });
@@ -165,6 +168,47 @@ export default function ProfilePage() {
       setError(e instanceof Error ? e.message : "重新生成失败,稍后再试。");
     } finally {
       setRegenerating(false);
+    }
+  }
+
+  async function handleWipeAll() {
+    if (wiping) return;
+    // 双重确认 + 让用户手敲一段话作为最终防线
+    const first = window.confirm(
+      "确定要删除你的全部梦境吗?\n\n" +
+        "包括:所有梦的内容、AI 解读、画像缓存、对系统理解的反馈。\n" +
+        "保留:你的登录账号(还能再来记新的)。\n\n" +
+        "这个动作不可恢复。"
+    );
+    if (!first) return;
+    const typed = window.prompt(
+      "再确认一次。请输入「删除我的全部梦境」继续:"
+    );
+    if (typed !== "删除我的全部梦境") {
+      alert("没有输入完全一致的句子,取消删除。");
+      return;
+    }
+    setWiping(true);
+    try {
+      const res = await fetch("/api/account/data", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE_ALL_MY_DREAMS" }),
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        removedDreams?: number;
+        error?: string;
+      };
+      if (!res.ok || !j.ok) {
+        alert(j.error ?? "删除失败,稍后再试一次。");
+        return;
+      }
+      alert(`已删除 ${j.removedDreams ?? 0} 条梦。你的账号还在,可以重新开始。`);
+      // 回到首页,画像页这时也已没意义
+      window.location.href = "/";
+    } finally {
+      setWiping(false);
     }
   }
 
@@ -352,6 +396,42 @@ export default function ProfilePage() {
             <p className="mt-4 text-center text-[12px] text-text-tertiary">
               基于你目前记录的 {data.totalDreams} 个梦统计。
             </p>
+          </section>
+
+          {/* 危险区域:一键删除全部 */}
+          <section className="mx-auto max-w-5xl px-6 pb-20 md:px-10">
+            <SectionEyebrow>危险区域</SectionEyebrow>
+            <div
+              className="rounded-[14px] border p-5 md:p-6"
+              style={{
+                borderColor: "rgba(239,68,68,0.18)",
+                background: "rgba(239,68,68,0.04)",
+              }}
+            >
+              <h3 className="font-display text-[15px] text-text-primary">
+                删除我的全部梦境
+              </h3>
+              <p className="mt-2 text-[13px] leading-[1.7] text-text-secondary">
+                这是产品承诺的「随时一键删除全部数据」。
+                会清空你的所有梦境、AI 解读、画像缓存、以及对系统理解的反馈。
+                <br />
+                <span className="text-text-tertiary">
+                  你的登录账号会保留,删完后还能从头开始记。这个动作不可恢复。
+                </span>
+              </p>
+              <button
+                onClick={() => void handleWipeAll()}
+                disabled={wiping}
+                className="mt-4 rounded-[10px] border px-4 py-2 text-[13px] transition disabled:cursor-not-allowed disabled:opacity-50"
+                style={{
+                  borderColor: "rgba(239,68,68,0.35)",
+                  background: "rgba(239,68,68,0.08)",
+                  color: "#fca5a5",
+                }}
+              >
+                {wiping ? "正在删除…" : "删除我的全部梦境"}
+              </button>
+            </div>
           </section>
         </>
       )}

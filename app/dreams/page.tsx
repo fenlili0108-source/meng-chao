@@ -14,6 +14,7 @@ export default function DreamsPage() {
   const [dreams, setDreams] = useState<StoredDream[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,6 +31,27 @@ export default function DreamsPage() {
       cancelled = true;
     };
   }, []);
+
+  async function handleDelete(id: string) {
+    if (deletingId) return;
+    const ok = window.confirm(
+      "删除这条梦?这是不可恢复的操作——梦境内容和当时的解读都会被永久删掉。"
+    );
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/dreams/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(j.error ?? "删除失败,稍后再试一次。");
+        return;
+      }
+      setDreams((prev) => (prev ? prev.filter((d) => d.id !== id) : prev));
+      if (expandedId === id) setExpandedId(null);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   const total = dreams?.length ?? 0;
 
@@ -156,9 +178,11 @@ export default function DreamsPage() {
                       key={d.id}
                       dream={d}
                       expanded={expandedId === d.id}
+                      deleting={deletingId === d.id}
                       onToggle={() =>
                         setExpandedId((cur) => (cur === d.id ? null : d.id))
                       }
+                      onDelete={() => void handleDelete(d.id)}
                     />
                   ))}
                 </ul>
@@ -186,11 +210,15 @@ export default function DreamsPage() {
 function DreamCard({
   dream,
   expanded,
+  deleting,
   onToggle,
+  onDelete,
 }: {
   dream: StoredDream;
   expanded: boolean;
+  deleting: boolean;
   onToggle: () => void;
+  onDelete: () => void;
 }) {
   return (
     <li
@@ -294,6 +322,20 @@ function DreamCard({
                 />
               );
             })()}
+          </div>
+
+          {/* 删除单条 —— 克制的链接样式,避开误触 */}
+          <div
+            className="mt-5 flex justify-end border-t pt-4"
+            style={{ borderColor: "var(--border-subtle)" }}
+          >
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="text-[12px] text-text-tertiary underline-offset-2 transition hover:text-[#fca5a5] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleting ? "正在删除…" : "删除这条梦"}
+            </button>
           </div>
         </div>
       )}
