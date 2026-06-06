@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import type { StoredDream } from "@/lib/storage";
 import InterpretationBlocks, {
@@ -10,6 +11,13 @@ import ProfileNavLink from "@/components/ProfileNavLink";
 import ParticleField from "@/components/ParticleField";
 import Logo from "@/components/Logo";
 import UserMenu from "@/components/UserMenu";
+import BlurText from "@/components/BlurText";
+import {
+  ArrowUpRight,
+  Brain,
+  Clock3,
+  Play,
+} from "lucide-react";
 
 interface InterpretResponse {
   dream: StoredDream;
@@ -95,16 +103,12 @@ export default function Home() {
   return (
     <main className="relative min-h-screen">
       {/* —— 顶部导航 —— */}
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 md:px-10">
+      <nav className="fixed left-0 right-0 top-4 z-50 mx-auto flex max-w-6xl items-center justify-between px-6 md:px-10">
         <div className="rise">
           <Logo height={40} />
         </div>
         <div
-          className="rise hidden items-center gap-1 rounded-full border px-2 py-1.5 text-sm text-text-secondary backdrop-blur md:flex"
-          style={{
-            borderColor: "var(--border-subtle)",
-            background: "rgba(255,255,255,0.03)",
-          }}
+          className="rise liquid-glass hidden items-center gap-1 rounded-full px-2 py-1.5 text-sm text-text-secondary md:flex"
         >
           <span
             className="px-3 py-1 text-text-primary"
@@ -122,11 +126,7 @@ export default function Home() {
         </div>
         <div className="rise flex items-center gap-3">
           <div
-            className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs text-text-secondary backdrop-blur"
-            style={{
-              borderColor: "var(--border-subtle)",
-              background: "rgba(255,255,255,0.04)",
-            }}
+            className="liquid-glass hidden items-center gap-2 rounded-full px-3.5 py-1.5 text-xs text-text-secondary sm:inline-flex"
           >
             <span
               className="h-1.5 w-1.5 rounded-full"
@@ -141,39 +141,108 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* —— Hero:粒子星空作为背景层,文字浮在上面 —— */}
-      <section className="relative px-6 pt-10 pb-16 text-center md:pt-14 md:pb-20">
+      {/* —— Hero:沉浸式首屏,粒子星空作为背景层 —— */}
+      <section className="relative flex min-h-[100svh] flex-col overflow-hidden px-6 pt-28 text-center md:px-10">
         <ParticleField />
 
-        <div className="relative z-10">
-          <h1
-            className="rise font-display text-[44px] font-semibold leading-[1.04] tracking-tight md:text-[64px]"
-            style={{ animationDelay: ".08s" }}
+        <div className="relative z-10 mx-auto flex max-w-6xl flex-1 flex-col items-center justify-center pb-12 pt-12">
+          <div
+            className="rise liquid-glass mb-8 inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-xs text-text-secondary md:text-sm"
+            style={{ animationDelay: ".12s" }}
           >
-            <span className="display-gradient">读懂</span>
-            <span className="display-em">你的梦</span>
-            <span className="display-gradient">,然后读懂你</span>
-          </h1>
+            <span
+              className="rounded-full px-3 py-1 text-[11px] font-semibold text-[var(--bg-base)]"
+              style={{ background: "var(--text-primary)" }}
+            >
+              New
+            </span>
+            <span className="pr-3">越用越懂你 · 云端私密记梦</span>
+          </div>
+
+          <BlurText
+            text="读懂 你的梦 然后读懂你"
+            highlight="你的梦"
+            className="max-w-4xl font-display text-[52px] font-semibold italic leading-[0.9] tracking-tight md:text-[76px] lg:text-[92px]"
+          />
+
           <p
-            className="rise mx-auto mt-6 max-w-[520px] text-[15px] leading-[1.7] text-text-secondary md:text-[17px]"
-            style={{ animationDelay: ".18s" }}
+            className="rise mx-auto mt-7 max-w-[600px] text-[15px] leading-[1.7] text-text-secondary md:text-[18px]"
+            style={{ animationDelay: ".82s" }}
           >
             它会记得你的每一个梦,然后把它们连成你。
           </p>
+
+          <div
+            className="rise mt-8 flex flex-wrap items-center justify-center gap-4"
+            style={{ animationDelay: "1.05s" }}
+          >
+            <a
+              href="#record"
+              className="liquid-glass-strong inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-medium text-text-primary"
+            >
+              记一个梦
+              <ArrowUpRight className="h-4 w-4" />
+            </a>
+            <Link
+              href="/dreams"
+              className="inline-flex items-center gap-2 text-[14px] text-text-secondary transition-colors hover:text-text-primary"
+            >
+              <Play className="h-4 w-4 fill-current" />
+              回看我的梦境
+            </Link>
+          </div>
+
+          <div
+            className="rise mt-10 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2"
+            style={{ animationDelay: "1.22s" }}
+          >
+            <HeroStat
+              icon={<Clock3 className="h-5 w-5" />}
+              value="90 秒"
+              label="半梦半醒时也能先记下来"
+            />
+            <HeroStat
+              icon={<Brain className="h-5 w-5" />}
+              value={`${history.length || 0} 个`}
+              label="已经进入你的梦境记忆"
+            />
+          </div>
+        </div>
+
+        <div className="relative z-10 mx-auto mb-8 flex flex-col items-center gap-4">
+          <div className="liquid-glass rounded-full px-3.5 py-1 text-[12px] text-text-secondary">
+            记录 · 解读 · 画像 · 删除权
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-2 font-display text-[22px] italic tracking-tight text-text-primary/85 md:text-[28px]">
+            <span>Specificity</span>
+            <span>Memory</span>
+            <span>Privacy</span>
+            <span>Reflection</span>
+          </div>
         </div>
       </section>
 
       {/* —— 主体:记录 + 解读 —— */}
-      <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-24 md:grid-cols-5 md:px-10">
+      <section
+        id="record"
+        className="relative mx-auto grid min-h-screen max-w-6xl gap-6 px-6 py-24 md:grid-cols-5 md:px-10"
+      >
+        <div className="md:col-span-5">
+          <div className="mb-4 text-[12px] uppercase tracking-[0.16em] text-text-tertiary">
+            // Capture
+          </div>
+          <h2 className="font-display text-[42px] font-semibold italic leading-[0.95] tracking-tight text-text-primary md:text-[68px]">
+            把一个梦,
+            <br />
+            交给你的记忆引擎。
+          </h2>
+        </div>
+
         {/* 左:记一个梦 */}
         <div
-          className="rise rounded-[20px] border p-6 md:col-span-3 md:p-7"
+          className="rise liquid-glass-strong rounded-[20px] p-6 md:col-span-3 md:p-7"
           style={{
             animationDelay: ".34s",
-            background: "var(--bg-elevated)",
-            borderColor: "var(--border-subtle)",
-            boxShadow:
-              "0 24px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(139,124,246,0.06)",
           }}
         >
           <div className="mb-3 flex items-center gap-2 text-[13px] text-text-tertiary">
@@ -261,11 +330,9 @@ export default function Home() {
 
         {/* 右:状态/提示 */}
         <aside
-          className="rise rounded-[20px] border p-6 md:col-span-2"
+          className="rise liquid-glass rounded-[20px] p-6 md:col-span-2"
           style={{
             animationDelay: ".42s",
-            background: "rgba(255,255,255,0.02)",
-            borderColor: "var(--border-subtle)",
           }}
         >
           <div className="mb-3 text-[12px] uppercase tracking-[0.14em] text-text-tertiary">
@@ -405,6 +472,30 @@ export default function Home() {
         <span>⌘+Enter 提交</span>
       </footer>
     </main>
+  );
+}
+
+function HeroStat({
+  icon,
+  value,
+  label,
+}: {
+  icon: ReactNode;
+  value: string;
+  label: string;
+}) {
+  return (
+    <div className="liquid-glass rounded-[20px] p-5 text-left">
+      <div className="mb-8 flex h-8 w-8 items-center justify-center rounded-full text-text-primary">
+        {icon}
+      </div>
+      <div className="font-display text-[34px] font-semibold italic leading-none tracking-tight text-text-primary">
+        {value}
+      </div>
+      <div className="mt-2 text-[12px] leading-snug text-text-secondary">
+        {label}
+      </div>
+    </div>
   );
 }
 

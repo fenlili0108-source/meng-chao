@@ -81,6 +81,80 @@ body {
   font-style: italic;
 }
 
+/* Liquid glass —— 借参考交互的玻璃质感,但色彩仍使用 DESIGN.md token */
+.liquid-glass,
+.liquid-glass-strong {
+  background: rgba(255, 255, 255, 0.025);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.11),
+    0 18px 60px rgba(0, 0, 0, 0.28);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before,
+.liquid-glass-strong::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.2px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.42) 0%,
+    rgba(255, 255, 255, 0.14) 22%,
+    rgba(255, 255, 255, 0) 42%,
+    rgba(255, 255, 255, 0) 58%,
+    rgba(139, 124, 246, 0.16) 78%,
+    rgba(91, 141, 239, 0.32) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.liquid-glass-strong {
+  background:
+    radial-gradient(circle at 30% 0%, rgba(139, 124, 246, 0.16), transparent 42%),
+    rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(34px);
+  -webkit-backdrop-filter: blur(34px);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.42),
+    0 0 36px rgba(139, 124, 246, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.16);
+}
+.liquid-glass-strong::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.50) 0%,
+    rgba(255, 255, 255, 0.20) 22%,
+    rgba(255, 255, 255, 0) 42%,
+    rgba(255, 255, 255, 0) 58%,
+    rgba(139, 124, 246, 0.20) 78%,
+    rgba(91, 141, 239, 0.40) 100%
+  );
+}
+
+.blur-word {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(42px);
+  animation: blur-word-in 0.78s cubic-bezier(0.2, 0.75, 0.2, 1) forwards;
+  margin-right: 0.28em;
+}
+@keyframes blur-word-in {
+  0% { opacity: 0; filter: blur(10px); transform: translateY(42px); }
+  50% { opacity: 0.55; filter: blur(5px); transform: translateY(-5px); }
+  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
 /* (旧 .horizon-* 光晕实现已删除,首页 hero 现在用 components/ParticleField.tsx
     的粒子星空作为视觉中心) */
 
