@@ -155,8 +155,7 @@ body {
   100% { opacity: 1; filter: blur(0); transform: translateY(0); }
 }
 
-/* (旧 .horizon-* 光晕实现已删除,首页 hero 现在用 components/ParticleField.tsx
-    的粒子星空作为视觉中心) */
+/* (旧 .horizon-* 光晕实现已删除,首页背景现在用 components/VideoBackground.tsx) */
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(20px); }

@@ -8,10 +8,10 @@ import InterpretationBlocks, {
   getInterpretationParts,
 } from "@/components/InterpretationBlocks";
 import ProfileNavLink from "@/components/ProfileNavLink";
-import ParticleField from "@/components/ParticleField";
 import Logo from "@/components/Logo";
 import UserMenu from "@/components/UserMenu";
 import BlurText from "@/components/BlurText";
+import VideoBackground from "@/components/VideoBackground";
 import {
   ArrowUpRight,
   Brain,
@@ -101,7 +101,9 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen">
+    <main className="relative min-h-screen overflow-x-hidden">
+      <VideoBackground />
+
       {/* —— 顶部导航 —— */}
       <nav className="fixed left-0 right-0 top-4 z-50 mx-auto flex max-w-6xl items-center justify-between px-6 md:px-10">
         <div className="rise">
@@ -141,10 +143,8 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* —— Hero:沉浸式首屏,粒子星空作为背景层 —— */}
+      {/* —— Hero:沉浸式首屏,视频作为背景层 —— */}
       <section className="relative flex min-h-[100svh] flex-col overflow-hidden px-6 pt-28 text-center md:px-10">
-        <ParticleField />
-
         <div className="relative z-10 mx-auto flex max-w-6xl flex-1 flex-col items-center justify-center pb-12 pt-12">
           <div
             className="rise liquid-glass mb-8 inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-xs text-text-secondary md:text-sm"
